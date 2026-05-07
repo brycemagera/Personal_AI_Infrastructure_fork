@@ -27,11 +27,14 @@ export async function sendMessage(
   for (const chunk of chunks) {
     const escaped = escapeForAppleScript(chunk)
 
-    // Use buddy-based send — works reliably on modern macOS
+    // Use buddy-based send — works on modern macOS.
+    // The legacy syntax (`1st account`, `participant ... handle`) raises
+    // AppleScript syntax error -2741 because those terms were removed from
+    // the Messages.app dictionary. Use `1st service` and `buddy ... of`.
     const script = `
 tell application "Messages"
-  set targetService to 1st account whose service type = iMessage
-  set targetBuddy to participant targetService handle "${escapeForAppleScript(handle)}"
+  set targetService to 1st service whose service type = iMessage
+  set targetBuddy to buddy "${escapeForAppleScript(handle)}" of targetService
   send "${escaped}" to targetBuddy
 end tell`
 
