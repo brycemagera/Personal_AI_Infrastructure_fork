@@ -73,6 +73,7 @@ let observabilityModule: any = null
 let wikiModule: any = null
 let telegramModule: any = null
 let imessageModule: any = null
+let discordModule: any = null
 let assistantModule: any = null
 let performanceModule: any = null
 let syslogModule: any = null
@@ -103,6 +104,13 @@ async function loadModules(config: PulseConfig) {
       telegramModule = await import("./modules/telegram")
     } catch (err) {
       log("warn", "Telegram module not available", { error: String(err) })
+    }
+  }
+  if (config.discord?.enabled) {
+    try {
+      discordModule = await import("./modules/discord")
+    } catch (err) {
+      log("warn", "Discord module not available", { error: String(err) })
     }
   }
   if (config.imessage?.enabled) {
@@ -143,6 +151,7 @@ interface PulseConfig {
   voice?: { enabled: boolean; [key: string]: unknown }
   telegram?: { enabled: boolean; [key: string]: unknown }
   imessage?: { enabled: boolean; [key: string]: unknown }
+  discord?: { enabled: boolean; [key: string]: unknown }
   observability?: { enabled: boolean; dashboard_dir?: string; [key: string]: unknown }
   hooks?: { enabled: boolean; blocked_skills?: string[] }
   da?: { enabled: boolean; primary?: string; [key: string]: unknown }
@@ -175,6 +184,7 @@ async function loadPulseConfig(): Promise<PulseConfig> {
     voice: (parsed.voice as PulseConfig["voice"]) ?? { enabled: true },
     telegram: (parsed.telegram as PulseConfig["telegram"]) ?? { enabled: false },
     imessage: (parsed.imessage as PulseConfig["imessage"]) ?? { enabled: false },
+    discord: (parsed.discord as PulseConfig["discord"]) ?? { enabled: false },
     observability: (parsed.observability as PulseConfig["observability"]) ?? { enabled: true },
     performance: (parsed.performance as PulseConfig["performance"]) ?? { enabled: true },
     syslog: (parsed.syslog as PulseConfig["syslog"]) ?? { enabled: false, port: 5514 },
@@ -273,6 +283,11 @@ function buildHealthResponse(state: DaemonState, config: PulseConfig): Response 
     subsystems.imessage = imessageModule.imessageHealth()
   }
 
+  // Discord
+  if (discordModule && config.discord?.enabled) {
+    subsystems.discord = discordModule.discordHealth()
+  }
+
   // Assistant
   if (assistantModule && config.da?.enabled) {
     subsystems.assistant = assistantModule.assistantHealth()
@@ -314,6 +329,7 @@ async function main() {
       observability: config.observability?.enabled !== false,
       telegram: config.telegram?.enabled ?? false,
       imessage: config.imessage?.enabled ?? false,
+      discord: config.discord?.enabled ?? false,
       syslog: config.syslog?.enabled ?? false,
       da: config.da?.enabled ?? false,
     },
@@ -462,6 +478,11 @@ async function main() {
     log("info", "iMessage module started (supervised)")
   }
 
+  if (discordModule && config.discord?.enabled) {
+    supervise("discord", () => discordModule.startDiscord(config.discord), isShuttingDown)
+    log("info", "Discord module started (supervised)")
+  }
+
   // ── Cron Heartbeat Loop ──
 
   while (!shuttingDown) {
@@ -539,6 +560,7 @@ async function main() {
   server.stop()
   if (telegramModule) telegramModule.stopTelegram?.()
   if (imessageModule) imessageModule.stopIMessage?.()
+  if (discordModule) await discordModule.stopDiscord?.()
   if (assistantModule) assistantModule.stopAssistant?.()
   if (syslogModule) await syslogModule.stop?.()
   await writeState(STATE_PATH, state).catch(() => {})

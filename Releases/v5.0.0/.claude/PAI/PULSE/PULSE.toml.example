@@ -18,6 +18,32 @@ enabled = false
 # voice_id = "YOUR_ELEVENLABS_VOICE_ID"
 # api_key_env = "ELEVENLABS_API_KEY"
 
+[discord]
+# Discord DM bot — discord.js v14 gateway client.
+# Setup: create a bot at https://discord.com/developers/applications, enable
+# the "MESSAGE CONTENT INTENT" privileged intent, copy the bot token, and
+# (optionally) install the bot to your account so DMs work.
+enabled = false
+# bot_token = "YOUR_DISCORD_BOT_TOKEN"  # or set DISCORD_BOT_TOKEN in env
+# allowed_users = ["123456789012345678"]  # Discord snowflake IDs as strings
+# max_turns = 25                          # SDK turns per message
+# sdk_timeout_ms = 120000
+# edit_interval_ms = 800                  # cadence for live message edits
+
+[telegram]
+# Telegram bot — grammY polling client.
+enabled = false
+# bot_token = "YOUR_TELEGRAM_BOT_TOKEN"  # or set TELEGRAM_BOT_TOKEN in env
+# allowed_users = [123456789]            # Telegram numeric chat IDs
+
+[imessage]
+# macOS iMessage bridge — requires Full Disk Access and Automation permission
+# granted to the bun binary that launchd uses to run Pulse. See
+# DOCUMENTATION/Pulse/PulseSystem.md "iMessage Module" for setup.
+enabled = false
+# allowed_handles = ["+1XXXXXXXXXX"]     # E.164 phone numbers or emails
+# poll_interval_ms = 3000
+
 [notifications]
 enabled = true
 
